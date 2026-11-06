@@ -803,3 +803,223 @@ html[lang="ko"] .font-display {
   --tw-backdrop-blur:;
   backdrop-filter: none !important;
 }
+
+/* ------------------------------------------------------ Game library */
+
+.library-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.library-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding-inline-end: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 2px);
+}
+.library-item:hover {
+  background: color-mix(in oklch, var(--accent) 60%, transparent);
+}
+.lib-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  text-align: start;
+  cursor: pointer;
+  border-radius: inherit;
+}
+.lib-main:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+.library-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+.lib-result {
+  flex-shrink: 0;
+  min-width: 4.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-align: center;
+  background: var(--muted);
+  color: var(--muted-foreground);
+}
+.lib-win {
+  background: color-mix(in oklch, var(--shu) 16%, transparent);
+  color: var(--shu);
+}
+.lib-loss {
+  background: color-mix(in oklch, var(--primary) 14%, transparent);
+  color: var(--primary);
+}
+.lib-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lib-meta {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+.lib-tag {
+  margin-inline-start: 0.35rem;
+  padding: 0 0.4rem;
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--primary-foreground);
+  background: var(--primary);
+  vertical-align: 1px;
+}
+.lib-actions {
+  display: flex;
+  flex-shrink: 0;
+}
+.dialog .library-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+@media (max-width: 520px) {
+  .lib-result {
+    min-width: 0;
+  }
+  .lib-main {
+    flex-wrap: wrap;
+    gap: 0.35rem 0.6rem;
+  }
+}
+
+/* Viewer bar above the board while a record is open. */
+.viewer-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in oklch, var(--shu) 45%, var(--border));
+  background: color-mix(in oklch, var(--shu) 7%, var(--card));
+  outline: none;
+}
+.viewer-bar[hidden] {
+  display: none;
+}
+.viewer-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+.viewer-kind {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--shu);
+}
+.viewer-names {
+  font-size: 0.875rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.viewer-actions {
+  display: flex;
+  flex-shrink: 0;
+}
+
+/* ------------------------------------------------------ Review */
+
+.eval-graph {
+  width: 100%;
+  height: 5.25rem;
+  border-radius: 6px;
+  cursor: pointer;
+  display: block;
+}
+.graph-bg {
+  fill: var(--stone-white);
+  stroke: var(--border);
+}
+.dark .graph-bg {
+  fill: oklch(0.85 0.01 85);
+}
+.graph-area {
+  fill: var(--stone-black);
+}
+.graph-line {
+  fill: none;
+  stroke: var(--shu);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.graph-mid {
+  stroke: oklch(0.6 0.02 260 / 0.6);
+  stroke-dasharray: 3 3;
+  vector-effect: non-scaling-stroke;
+}
+.graph-cursor {
+  stroke: var(--shu);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+.graph-mark {
+  stroke: white;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.mark-blunder {
+  fill: oklch(0.57 0.2 27);
+  color: oklch(0.57 0.2 27);
+}
+.mark-mistake {
+  fill: oklch(0.68 0.15 55);
+  color: oklch(0.68 0.15 55);
+}
+.mark-dubious {
+  color: oklch(0.7 0.12 85);
+}
+.mv-mark {
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+.review-side {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+.review-loss {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.4rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  text-align: start;
+  cursor: pointer;
+}
+.review-loss:hover {
+  background: var(--accent);
+}
+.board .best-ring {
+  fill: oklch(0.6 0.13 160 / 0.25);
+  stroke: oklch(0.55 0.14 160);
+  stroke-width: 3.5;
+}

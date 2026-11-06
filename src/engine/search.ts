@@ -104,6 +104,13 @@ export class Searcher {
     return this.result();
   }
 
+  /** Visits and win rate (for the side to move) of one root move. */
+  childStats(p: number): { visits: number; winrate: number } | null {
+    const k = this.root.children?.find((c) => c.move === p);
+    if (!k || k.n === 0) return null;
+    return { visits: k.visits, winrate: k.w / k.n };
+  }
+
   result(): SearchResult {
     const kids = this.root.children ?? [];
     const sorted = kids.filter((k) => k.visits > 0).sort((a, b) =>

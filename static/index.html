@@ -344,6 +344,86 @@
       </div>
     </dialog>
 
+    <!-- Game library dialog -->
+    <dialog id="library-dialog" class="dialog w-full sm:max-w-2xl max-h-[92dvh]"
+      aria-labelledby="library-title" data-backdrop-close>
+      <div>
+        <header>
+          <h2 id="library-title" class="font-display text-xl"
+            data-i18n="library.title">Game records</h2>
+          <p data-i18n="library.desc">Games are saved in this browser.</p>
+        </header>
+        <section class="overflow-y-auto scrollbar flex flex-col gap-3">
+          <div class="seg library-filter" role="radiogroup"
+            data-i18n-aria="library.filter">
+            <label><input type="radio" name="lib-filter" value="all" checked /><span data-i18n="library.filter.all">All</span></label>
+            <label><input type="radio" name="lib-filter" value="win" /><span data-i18n="library.filter.win">Wins</span></label>
+            <label><input type="radio" name="lib-filter" value="loss" /><span data-i18n="library.filter.loss">Losses</span></label>
+            <label><input type="radio" name="lib-filter" value="draw" /><span data-i18n="library.filter.draw">Draws</span></label>
+          </div>
+          <p class="text-xs text-destructive" id="library-warning" hidden
+            data-i18n="library.noStorage"></p>
+          <ul class="library-list" id="library-list"></ul>
+          <div class="flex flex-col gap-2" id="library-paste" hidden>
+            <textarea class="textarea font-mono text-xs" rows="6"
+              id="library-paste-text" dir="ltr"
+              placeholder="(;GM[1]SZ[19]...)"></textarea>
+            <div class="flex gap-2 justify-end">
+              <button type="button" class="btn" data-variant="ghost"
+                data-size="sm" id="library-paste-cancel"
+                data-i18n="btn.cancel">Cancel</button>
+              <button type="button" class="btn" data-size="sm"
+                id="library-paste-submit"
+                data-i18n="library.paste.submit">Import</button>
+            </div>
+          </div>
+        </section>
+        <footer class="library-actions">
+          <input type="file" id="library-file"
+            accept=".sgf,.txt,application/x-go-sgf,text/plain" multiple
+            hidden />
+          <button type="button" class="btn" data-variant="outline"
+            data-size="sm" id="library-import-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+              viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              aria-hidden="true">
+              <path d="M12 3v12" />
+              <path d="m17 8-5-5-5 5" />
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            </svg>
+            <span data-i18n="library.import">Import SGF</span>
+          </button>
+          <button type="button" class="btn" data-variant="outline"
+            data-size="sm" id="library-paste-btn">
+            <span data-i18n="library.paste">Paste SGF</span>
+          </button>
+          <button type="button" class="btn" data-variant="outline"
+            data-size="sm" id="library-export-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+              viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              aria-hidden="true">
+              <path d="M12 15V3" />
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <path d="m7 10 5 5 5-5" />
+            </svg>
+            <span data-i18n="library.exportAll">Download all</span>
+          </button>
+        </footer>
+        <button type="button" class="btn" data-variant="ghost"
+          data-size="icon-sm" aria-label="Close dialog"
+          data-i18n-aria="btn.close" data-close>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+      </div>
+    </dialog>
+
     <!-- Rules dialog -->
     <dialog id="rules-dialog" class="dialog w-full sm:max-w-2xl max-h-[90dvh]"
       aria-labelledby="rules-title" data-backdrop-close>

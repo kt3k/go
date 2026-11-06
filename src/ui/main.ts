@@ -33,6 +33,24 @@ import {
   t,
 } from "./i18n.ts";
 import type { WorkerRequest, WorkerResponse } from "./worker.ts";
+import {
+  decodeShare,
+  encodeShare,
+  parseSGF,
+  type RecordResult,
+  resultToSGF,
+  type SgfGame,
+  toSGF,
+} from "../engine/record.ts";
+import {
+  deleteRecord,
+  type GameRecord,
+  getRecord,
+  isPersistent,
+  listRecords,
+  newId,
+  putRecord,
+} from "./library.ts";
 
 // ---------------------------------------------------------------------------
 // Opponents
@@ -62,11 +80,28 @@ const kanjiAside = (id: number, extra = "") =>
 
 type Phase = "play" | "scoring" | "over";
 
-interface GameResult {
-  winner: Color | 0;
-  reason: "score" | "resign";
-  /** Black minus White, komi included (for "score"). */
-  margin?: number;
+type GameResult = RecordResult;
+
+/** Review of a game: Black's win rate after each ply and the best move. */
+interface Review {
+  black: (number | null)[];
+  best: (number | null)[];
+  /** Win rate of the best move / the played move, for the side to move. */
+  bestQ?: (number | null)[];
+  playedQ?: (number | null)[];
+}
+
+/** The live game, put aside while a record is open in the viewer. */
+interface Snapshot {
+  setup: GameSetup;
+  player: Color;
+  level: number;
+  game: Game;
+  phase: Phase;
+  result: GameResult | null;
+  dead: Uint8Array | null;
+  liveId: string;
+  review: Review | null;
 }
 
 interface Saved {
@@ -77,6 +112,8 @@ interface Saved {
   phase: Phase;
   dead?: number[];
   result?: GameResult | null;
+  id?: string;
+  review?: Review | null;
 }
 
 const STORAGE_KEY = "go:game";
@@ -105,6 +142,14 @@ const state = {
   hover: null as number | null,
   /** Stone that was just placed (for the drop animation). */
   placed: null as number | null,
+  /** Library id of the live game. */
+  liveId: newId(),
+  /** A record open in the viewer (the live game is stashed). */
+  viewer: null as { rec: GameRecord; live: Snapshot } | null,
+  review: null as Review | null,
+  reviewing: false,
+  /** Show the engine's better move instead of the one played. */
+  showBest: false,
 };
 
 function load(): Saved | null {
@@ -120,6 +165,8 @@ function load(): Saved | null {
 }
 
 function save() {
+  if (state.viewer) return;
+  persistLive();
   const s: Saved = {
     setup: state.setup,
     player: state.player,
@@ -130,6 +177,8 @@ function save() {
       ? [...state.dead.keys()].filter((v) => state.dead![v])
       : undefined,
     result: state.result,
+    id: state.liveId,
+    review: state.review,
   };
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
@@ -179,10 +228,14 @@ function send(req: WorkerRequest) {
 
 /** Abandons any running search (the worker is restarted). */
 function cancelThinking() {
-  if (!state.thinking && !state.hintPending && !state.deadPending) return;
+  if (
+    !state.thinking && !state.hintPending && !state.deadPending &&
+    !state.reviewing
+  ) return;
   worker.terminate();
   createWorker();
   state.thinking = false;
+  state.reviewing = false;
   state.hintPending = false;
   state.deadPending = false;
   reqId++;
@@ -211,6 +264,8 @@ function onWorker(r: WorkerResponse) {
         ? t("status.hint.pass")
         : t("status.hint", { point: coordName(r.move, state.setup.size) }),
     );
+  } else if (r.type === "analysis") {
+    onAnalysis(r);
   } else if (r.type === "dead") {
     state.deadPending = false;
     const d = new Uint8Array(state.setup.size ** 2);
@@ -351,7 +406,9 @@ async function resign() {
 
 /** Starts a new game with the current settings. */
 function newGame() {
+  if (state.viewer) closeViewer(false);
   cancelThinking();
+  retireLive();
   const color = state.colorPref === "random"
     ? (Math.random() < 0.5 ? BLACK : WHITE)
     : state.colorPref === "white"
@@ -372,6 +429,9 @@ function newGame() {
   state.preview = null;
   state.placed = null;
   state.cursor = -1;
+  state.liveId = newId();
+  state.review = null;
+  state.showBest = false;
   save();
   if (isAITurn()) requestAIMove();
   else render();
@@ -594,6 +654,22 @@ function renderBoard() {
     );
   }
 
+  // Review: the engine's better move for the move being viewed.
+  if (state.viewPly !== null && state.viewPly > 0 && state.review) {
+    const i = state.viewPly - 1;
+    const best = state.review.best[i];
+    if (
+      moveMark(i) && best !== null && best !== PASS &&
+      best !== state.game.moves[i]
+    ) {
+      parts.push(
+        `<circle class="best-ring" cx="${cx(best % n)}" cy="${
+          cx((best / n) | 0)
+        }" r="${CELL * 0.4}"/>`,
+      );
+    }
+  }
+
   if (state.hint !== null && state.hint !== PASS && state.viewPly === null) {
     const v = state.hint;
     parts.push(
@@ -756,7 +832,19 @@ function renderStatus() {
   let extra = "";
   const level = state.level;
   const spinner = `<span class="thinking-dot" aria-hidden="true"></span>`;
-  if (state.phase === "over" && state.viewPly === null && state.result) {
+  const rec = state.viewer?.rec;
+  if (
+    rec && state.viewPly === null && (!state.result || !isPlayed(rec))
+  ) {
+    icon.innerHTML =
+      `<svg class="size-5 text-shu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`;
+    title.textContent = state.result
+      ? resultText(state.result)
+      : t("viewer.unfinished");
+    detail.textContent = t("viewer.help");
+  } else if (
+    state.phase === "over" && state.viewPly === null && state.result
+  ) {
     const res = state.result;
     icon.innerHTML = res.winner === state.player
       ? `<span class="seal size-6 text-sm">勝</span>`
@@ -834,6 +922,23 @@ function renderStatus() {
       ? t("status.reviewStart")
       : t("status.reviewMove", { n: ply, move: moveText(ply - 1) });
     detail.textContent = coarse() ? "" : t("status.reviewHelp");
+    const m = ply > 0 ? moveLoss(ply - 1) : null;
+    if (m) {
+      const mark = moveMark(ply - 1);
+      const c = g.colorOf(ply - 1);
+      title.textContent += mark ? ` ${MARK_SYMBOL[mark]}` : "";
+      const best = state.review!.best[ply - 1];
+      const played = g.moves[ply - 1];
+      detail.textContent = t("review.winrate", {
+        side: sideName(c),
+        before: Math.round(m.before * 100),
+        after: Math.round(m.after * 100),
+      }) + (best !== null && best !== played && mark
+        ? " " + t("review.better", {
+          move: best === PASS ? t("moves.pass") : coordName(best, g.n),
+        })
+        : "");
+    }
   } else if (state.preview !== null) {
     icon.innerHTML = stoneIcon(state.player);
     title.textContent = t("status.confirm", {
@@ -881,10 +986,10 @@ function renderStatus() {
     !g.moves.some((_, i) => g.colorOf(i) === state.player);
   $<HTMLButtonElement>("resign-btn").disabled = !playing;
   const newBtn = $("new-game-btn");
-  $("new-game-label").textContent = state.phase === "over"
+  $("new-game-label").textContent = state.phase === "over" && !state.viewer
     ? t("btn.playAgain")
     : t("btn.newGame");
-  if (state.phase === "over") delete newBtn.dataset.variant;
+  if (state.phase === "over" && !state.viewer) delete newBtn.dataset.variant;
   else newBtn.dataset.variant = "secondary";
 }
 
@@ -900,7 +1005,11 @@ function renderPlayers() {
   const row = (c: Color) => {
     const isAI = c === ai;
     const toMove = state.phase === "play" && b.toPlay === c;
-    const name = isAI
+    const foreign = state.viewer &&
+      !(isPlayed(state.viewer.rec) && state.level);
+    const name = foreign
+      ? `<span class="font-medium truncate">${esc(sideLabel(c))}</span>`
+      : isAI
       ? `<span class="font-medium">${lname(state.level)}</span>
          ${kanjiAside(state.level, "max-sm:hidden")}
          <span class="badge shrink-0" data-variant="outline">${
@@ -946,6 +1055,8 @@ function renderPlayers() {
 
 function renderOpponent() {
   const l = state.level;
+  $("opponent-card").hidden = !LEVELS[l - 1];
+  if (!LEVELS[l - 1]) return;
   const hc = state.setup.handicap;
   $("opponent-card").innerHTML = `
     <header class="px-5">
@@ -1024,7 +1135,13 @@ function renderMoves() {
           cur ? ' aria-current="step"' : ""
         } tabindex="${cur ? 0 : -1}">${stoneIcon(c, "size-3")}<span>${
           moveText(j)
-        }</span>${cap ? `<span class="cap">×${cap}</span>` : ""}</button>`,
+        }</span>${cap ? `<span class="cap">×${cap}</span>` : ""}${
+          moveMark(j)
+            ? `<span class="mv-mark mark-${moveMark(j)}">${
+              MARK_SYMBOL[moveMark(j)!]
+            }</span>`
+            : ""
+        }</button>`,
       );
     }
   }
@@ -1054,7 +1171,9 @@ function renderMoveNav() {
   $<HTMLButtonElement>("nav-next").disabled = ply >= total;
   $<HTMLButtonElement>("nav-last").disabled = ply >= total;
   $("nav-live").hidden = state.viewPly === null;
-  $("analyse-btn").hidden = true;
+  $("analyse-btn").hidden = state.phase !== "over" || state.reviewing ||
+    total < 2 ||
+    (!!state.review && state.review.black.every((x) => x !== null));
 }
 
 /** Compact move navigation under the board (phones). */
@@ -1085,6 +1204,8 @@ function renderReviewStrip() {
 }
 
 function render() {
+  renderViewer();
+  renderReview();
   renderBoard();
   renderStatus();
   renderPlayers();
@@ -1111,7 +1232,8 @@ function showResult() {
     text,
     n: state.game.moves.length,
   });
-  $("result-review-btn").hidden = true;
+  $("result-review-btn").hidden = state.game.moves.length < 2 ||
+    !!state.review;
   openDialog($<HTMLDialogElement>("result-dialog"));
 }
 
@@ -1384,6 +1506,706 @@ function announce(text: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Records: auto-save, the library, the viewer, SGF files and share links
+// ---------------------------------------------------------------------------
+
+/** Escapes text from outside (SGF names) for use in HTML. */
+const esc = (s: string) =>
+  s.replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        c
+      ]!,
+  );
+
+const deadList = (d: Uint8Array | null) =>
+  d ? [...d.keys()].filter((v) => d[v]) : undefined;
+
+function liveRecord(): GameRecord {
+  const now = Date.now();
+  return {
+    id: state.liveId,
+    createdAt: now,
+    updatedAt: now,
+    setup: state.setup,
+    moves: [...state.game.moves],
+    source: "played",
+    player: state.player,
+    level: state.level,
+    result: state.result,
+    dead: deadList(state.dead),
+    review: state.review ?? undefined,
+  };
+}
+
+/** Upserts the live game into the library (from the second move on). */
+async function persistLive(abandoned = false) {
+  if (state.game.moves.length < 2) return;
+  const rec = liveRecord();
+  if (abandoned) rec.abandoned = true;
+  const old = await getRecord(rec.id);
+  if (old) rec.createdAt = old.createdAt;
+  await putRecord(rec);
+}
+
+/** Before the live game is replaced: keep it, marked if unfinished. */
+function retireLive() {
+  if (state.phase === "play") persistLive(true);
+}
+
+function snapshot(): Snapshot {
+  return {
+    setup: state.setup,
+    player: state.player,
+    level: state.level,
+    game: state.game,
+    phase: state.phase,
+    result: state.result,
+    dead: state.dead,
+    liveId: state.liveId,
+    review: state.review,
+  };
+}
+
+function applySnapshot(s: Snapshot) {
+  state.setup = s.setup;
+  state.player = s.player;
+  state.level = s.level;
+  state.game = s.game;
+  state.phase = s.phase;
+  state.result = s.result;
+  state.dead = s.dead;
+  state.liveId = s.liveId;
+  state.review = s.review;
+}
+
+/** Opens a record in the viewer, stashing the live game. */
+function openRecord(rec: GameRecord) {
+  for (
+    const d of document.querySelectorAll<HTMLDialogElement>("dialog[open]")
+  ) {
+    d.close();
+  }
+  if (!state.viewer && rec.id === state.liveId) {
+    goLive();
+    return;
+  }
+  const g = Game.fromMoves(rec.setup, rec.moves);
+  if (!g) {
+    toast(t("library.broken"));
+    return;
+  }
+  cancelThinking();
+  const live = state.viewer ? state.viewer.live : snapshot();
+  state.viewer = { rec, live };
+  state.setup = rec.setup;
+  state.game = g;
+  state.player = rec.player ?? BLACK;
+  state.level = rec.level ?? 0;
+  state.phase = "over";
+  state.result = rec.result ?? null;
+  state.dead = null;
+  if (rec.dead) {
+    state.dead = new Uint8Array(rec.setup.size ** 2);
+    for (const v of rec.dead) state.dead[v] = 1;
+  }
+  state.review = rec.review ?? null;
+  state.viewPly = null;
+  state.hint = null;
+  state.preview = null;
+  render();
+  $("viewer-card").focus({ preventScroll: true });
+}
+
+/** Leaves the viewer and returns to the live game. */
+function closeViewer(resume = true) {
+  if (!state.viewer) return;
+  cancelThinking();
+  const live = state.viewer.live;
+  state.viewer = null;
+  applySnapshot(live);
+  state.viewPly = null;
+  if (location.hash.startsWith("#g=")) {
+    history.replaceState(null, "", location.pathname + location.search);
+  }
+  if (!resume) return;
+  render();
+  if (state.phase === "scoring" && !state.dead) enterScoring();
+  else if (isAITurn()) requestAIMove();
+}
+
+const isPlayed = (rec: GameRecord) => rec.source === "played";
+
+/** Display name of one side of a record. */
+function recordSide(rec: GameRecord, c: Color): string {
+  if (isPlayed(rec) && rec.level) {
+    return c === rec.player ? t("player.you") : lname(rec.level);
+  }
+  const name = c === BLACK ? rec.black : rec.white;
+  return name?.trim() ? name : sideName(c);
+}
+
+function recordTitle(rec: GameRecord): string {
+  return t("library.vs", {
+    black: esc(recordSide(rec, BLACK)),
+    white: esc(recordSide(rec, WHITE)),
+  });
+}
+
+type Outcome = "win" | "loss" | "draw" | "unfinished" | "abandoned" | "other";
+
+function outcome(rec: GameRecord): Outcome {
+  if (!isPlayed(rec)) return "other";
+  if (!rec.result) return rec.abandoned ? "abandoned" : "unfinished";
+  if (rec.result.winner === 0) return "draw";
+  return rec.result.winner === rec.player ? "win" : "loss";
+}
+
+function sgfOf(rec: GameRecord): SgfGame {
+  const d = new Date(rec.createdAt);
+  const pad = (x: number) => String(x).padStart(2, "0");
+  return {
+    setup: rec.setup,
+    moves: rec.moves,
+    black: recordSide(rec, BLACK),
+    white: recordSide(rec, WHITE),
+    date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+    result: rec.result ?? undefined,
+  };
+}
+
+function fileStamp(ms: number) {
+  const d = new Date(ms);
+  const pad = (x: number) => String(x).padStart(2, "0");
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${
+    pad(d.getHours())
+  }${pad(d.getMinutes())}`;
+}
+
+function download(name: string, text: string) {
+  const url = URL.createObjectURL(
+    new Blob([text], { type: "application/x-go-sgf" }),
+  );
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+function downloadRecord(rec: GameRecord) {
+  download(`go-${fileStamp(rec.createdAt)}.sgf`, toSGF(sgfOf(rec)));
+}
+
+function shareURL(rec: GameRecord) {
+  return `${location.origin}${location.pathname}#g=${encodeShare(sgfOf(rec))}`;
+}
+
+async function copyLink(rec: GameRecord) {
+  const url = shareURL(rec);
+  try {
+    await navigator.clipboard.writeText(url);
+    toast(t("library.copied"));
+  } catch {
+    prompt(t("library.share"), url);
+  }
+}
+
+/** Same game (setup and moves), for de-duplicating imports. */
+const gameKey = (setup: GameSetup, moves: number[]) =>
+  JSON.stringify([
+    setup.size,
+    setup.komi,
+    setup.handicap,
+    setup.ab ?? null,
+    moves,
+  ]);
+
+/** Opens a game from a share link in the URL hash, if any. */
+async function openFromHash() {
+  const m = /^#g=(.+)$/.exec(location.hash);
+  if (!m) return;
+  const g = decodeShare(m[1]);
+  if (!g) {
+    toast(t("library.badLink"));
+    history.replaceState(null, "", location.pathname + location.search);
+    return;
+  }
+  const key = gameKey(g.setup, g.moves);
+  let rec = (await listRecords()).find((r) =>
+    gameKey(r.setup, r.moves) === key
+  );
+  if (!rec) {
+    const now = Date.now();
+    rec = {
+      id: newId(),
+      createdAt: now,
+      updatedAt: now,
+      setup: g.setup,
+      moves: g.moves,
+      source: "shared",
+      result: g.result ?? null,
+    };
+    await putRecord(rec);
+  }
+  openRecord(rec);
+}
+
+// --- Library dialog -------------------------------------------------------
+
+let libraryCache: GameRecord[] = [];
+
+async function openLibrary() {
+  if (state.phase !== "over" || !state.viewer) await persistLive();
+  await renderLibrary();
+  openDialog($<HTMLDialogElement>("library-dialog"));
+  $("library-warning").hidden = await isPersistent();
+}
+
+function formatDate(ms: number) {
+  return new Intl.DateTimeFormat(currentLang(), {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(ms);
+}
+
+const ICON_LINK =
+  `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
+const ICON_DOWNLOAD =
+  `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>`;
+const ICON_TRASH =
+  `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+const ICON_BACK =
+  `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>`;
+
+const iconBtn = (act: string, label: string, icon: string, id = "") =>
+  `<button type="button" class="btn" data-variant="ghost" data-size="icon-sm" data-act="${act}"${
+    id ? ` data-id="${id}"` : ""
+  } aria-label="${label}" title="${label}">${icon}</button>`;
+
+function resultPill(rec: GameRecord): string {
+  const o = outcome(rec);
+  const label = o === "other"
+    ? (resultToSGF(rec.result) || "—")
+    : t(`library.outcome.${o}`);
+  return `<span class="lib-result lib-${o}">${esc(label)}</span>`;
+}
+
+async function renderLibrary() {
+  libraryCache = await listRecords();
+  const filter = document.querySelector<HTMLInputElement>(
+    'input[name="lib-filter"]:checked',
+  )?.value ?? "all";
+  const list = libraryCache.filter((r) =>
+    filter === "all" || outcome(r) === filter
+  );
+  const el = $("library-list");
+  if (!list.length) {
+    el.innerHTML = `<li class="library-empty">${
+      t(libraryCache.length ? "library.emptyFilter" : "library.empty")
+    }</li>`;
+    return;
+  }
+  const liveId = state.viewer ? state.viewer.live.liveId : state.liveId;
+  const openId = state.viewer?.rec.id;
+  el.innerHTML = list.map((r) => {
+    const current = r.id === liveId
+      ? `<span class="lib-tag">${t("library.current")}</span>`
+      : r.id === openId
+      ? `<span class="lib-tag">${t("library.open")}</span>`
+      : "";
+    const size = t("opponent.board", { size: r.setup.size });
+    return `
+    <li class="library-item">
+      <button type="button" class="lib-main" data-act="open" data-id="${r.id}">
+        ${resultPill(r)}
+        <span class="min-w-0 flex flex-col">
+          <span class="lib-title">${recordTitle(r)} ${current}</span>
+          <span class="lib-meta">${size} · ${
+      t("moves.count", { n: r.moves.length })
+    } · ${formatDate(r.createdAt)}</span>
+        </span>
+      </button>
+      <span class="lib-actions">
+        ${iconBtn("link", t("library.share"), ICON_LINK, r.id)}
+        ${iconBtn("download", t("library.download"), ICON_DOWNLOAD, r.id)}
+        ${
+      r.id === liveId
+        ? ""
+        : iconBtn("delete", t("library.delete"), ICON_TRASH, r.id)
+    }
+      </span>
+    </li>`;
+  }).join("");
+}
+
+async function onLibraryClick(e: Event) {
+  const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-act]");
+  if (!btn?.dataset.id) return;
+  const rec = libraryCache.find((r) => r.id === btn.dataset.id);
+  if (!rec) return;
+  const act = btn.dataset.act;
+  if (act === "open") openRecord(rec);
+  else if (act === "link") copyLink(rec);
+  else if (act === "download") downloadRecord(rec);
+  else if (act === "delete") {
+    if (!(await ask(t("library.confirmDelete"), t("library.delete")))) return;
+    await deleteRecord(rec.id);
+    if (state.viewer?.rec.id === rec.id) closeViewer();
+    await renderLibrary();
+  }
+}
+
+/** Imports SGF text; returns how many games were added. */
+async function importSGF(text: string): Promise<number> {
+  const { games, failures } = parseSGF(text);
+  const known = new Set(
+    (await listRecords()).map((r) => gameKey(r.setup, r.moves)),
+  );
+  let added = 0;
+  let last: GameRecord | null = null;
+  const now = Date.now();
+  for (const [k, g] of games.entries()) {
+    const key = gameKey(g.setup, g.moves);
+    if (known.has(key)) continue;
+    known.add(key);
+    const dt = g.date ? Date.parse(g.date) : NaN;
+    const rec: GameRecord = {
+      id: newId(),
+      createdAt: isNaN(dt) ? now - k : dt,
+      updatedAt: now - k,
+      setup: g.setup,
+      moves: g.moves,
+      source: "imported",
+      black: g.black,
+      white: g.white,
+      result: g.result ?? null,
+    };
+    await putRecord(rec);
+    last = rec;
+    added++;
+  }
+  if (failures.length && !games.length) toast(t("library.importFailed"));
+  else if (failures.length) {
+    toast(t("library.importPartial", { n: added, failed: failures.length }));
+  } else if (games.length && !added) toast(t("library.importDuplicate"));
+  else if (added) toast(t("library.imported", { n: added }));
+  await renderLibrary();
+  if (added === 1 && last) openRecord(last);
+  return added;
+}
+
+async function exportAll() {
+  const recs = await listRecords();
+  if (!recs.length) return;
+  download(
+    `go-games-${fileStamp(Date.now())}.sgf`,
+    recs.map((r) => toSGF(sgfOf(r))).join("\n"),
+  );
+}
+
+function wireLibrary() {
+  $("library-btn").addEventListener("click", openLibrary);
+  $("library-list").addEventListener("click", onLibraryClick);
+  for (
+    const el of document.querySelectorAll<HTMLInputElement>(
+      'input[name="lib-filter"]',
+    )
+  ) el.addEventListener("change", renderLibrary);
+  const file = $<HTMLInputElement>("library-file");
+  $("library-import-btn").addEventListener("click", () => file.click());
+  file.addEventListener("change", async () => {
+    const texts = await Promise.all(
+      [...(file.files ?? [])].map((f) => f.text()),
+    );
+    file.value = "";
+    if (texts.length) await importSGF(texts.join("\n"));
+  });
+  $("library-paste-btn").addEventListener("click", () => {
+    $("library-paste").hidden = false;
+    $("library-paste-text").focus();
+  });
+  $("library-paste-cancel").addEventListener("click", () => {
+    $("library-paste").hidden = true;
+  });
+  $("library-paste-submit").addEventListener("click", async () => {
+    const ta = $<HTMLTextAreaElement>("library-paste-text");
+    if (!ta.value.trim()) return;
+    const added = await importSGF(ta.value);
+    if (added) {
+      ta.value = "";
+      $("library-paste").hidden = true;
+    }
+  });
+  $("library-export-btn").addEventListener("click", exportAll);
+  $("viewer-card").addEventListener("click", (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-act]");
+    const rec = state.viewer?.rec;
+    if (!btn || !rec) return;
+    if (btn.dataset.act === "close") closeViewer();
+    else if (btn.dataset.act === "link") copyLink(rec);
+    else if (btn.dataset.act === "download") downloadRecord(rec);
+  });
+  addEventListener("hashchange", openFromHash);
+}
+
+function renderViewer() {
+  const el = $("viewer-card");
+  const rec = state.viewer?.rec;
+  el.hidden = !rec;
+  if (!rec) return;
+  const kind = t(`viewer.kind.${rec.source}`);
+  el.innerHTML = `
+    <button type="button" class="btn" data-variant="outline" data-size="sm" data-act="close">${ICON_BACK}<span>${
+    t("viewer.back")
+  }</span></button>
+    <div class="viewer-info">
+      <span class="viewer-kind">${kind}</span>
+      <span class="viewer-names">${recordTitle(rec)}</span>
+    </div>
+    <span class="viewer-actions">
+      ${iconBtn("link", t("library.share"), ICON_LINK)}
+      ${iconBtn("download", t("library.download"), ICON_DOWNLOAD)}
+    </span>`;
+}
+
+// --- Review ---------------------------------------------------------------
+
+const reviewPlayouts = (n: number) => (n <= 9 ? 2500 : n <= 13 ? 1500 : 900);
+
+/** Black's chance at the end, from the result. */
+function finalBlack(): number | null {
+  const r = state.result;
+  if (!r) return null;
+  return r.winner === BLACK ? 1 : r.winner === WHITE ? 0 : 0.5;
+}
+
+function startReview() {
+  if (state.reviewing || state.game.moves.length < 2) return;
+  const total = state.game.moves.length;
+  if (!state.review || state.review.black.length !== total + 1) {
+    state.review = {
+      black: Array(total + 1).fill(null),
+      best: Array(total + 1).fill(null),
+      bestQ: Array(total + 1).fill(null),
+      playedQ: Array(total + 1).fill(null),
+    };
+  }
+  const from = Math.max(0, state.review.black.findIndex((x) => x === null));
+  state.reviewing = true;
+  send({
+    type: "analyse",
+    id: ++reqId,
+    setup: state.setup,
+    moves: [...state.game.moves],
+    from,
+    playouts: reviewPlayouts(state.setup.size),
+  });
+  render();
+}
+
+function onAnalysis(r: Extract<WorkerResponse, { type: "analysis" }>) {
+  const rv = state.review;
+  if (!rv) return;
+  rv.black[r.ply] = Number.isNaN(r.black)
+    ? finalBlack() ?? rv.black[r.ply - 1]
+    : r.black;
+  rv.best[r.ply] = r.best;
+  (rv.bestQ ??= [])[r.ply] = r.bestQ;
+  (rv.playedQ ??= [])[r.ply] = r.playedQ;
+  if (r.done) {
+    state.reviewing = false;
+    storeReview();
+  }
+  renderReview();
+  renderMoves();
+  renderStatus();
+  renderBoard();
+}
+
+function storeReview() {
+  if (state.viewer) {
+    const rec = state.viewer.rec;
+    rec.review = state.review ?? undefined;
+    rec.updatedAt = Date.now();
+    putRecord(rec);
+  } else save();
+}
+
+/** Win rate of the colour that played move `i` before and after it. */
+function moveLoss(
+  i: number,
+): { loss: number; before: number; after: number } | null {
+  const rv = state.review;
+  if (!rv) return null;
+  // Compare the best move with the move played, as seen by the same search
+  // (win rates from separate searches are each optimistic for the side to
+  // move). If the played move was barely searched, fall back to the
+  // opponent's best reply in the next position.
+  const best = rv.bestQ?.[i];
+  if (best == null) return null;
+  let after = rv.playedQ?.[i] ?? null;
+  if (after === null) {
+    const next = rv.bestQ?.[i + 1];
+    if (next == null) {
+      if (rv.black[i + 1] == null) return null;
+      const c = state.game.colorOf(i);
+      after = c === BLACK ? rv.black[i + 1]! : 1 - rv.black[i + 1]!;
+    } else after = 1 - next;
+  }
+  if (rv.best[i] === state.game.moves[i]) after = best;
+  return { loss: Math.max(0, best - after), before: best, after };
+}
+
+type Mark = "blunder" | "mistake" | "dubious" | null;
+function moveMark(i: number): Mark {
+  const m = moveLoss(i);
+  if (!m) return null;
+  if (m.loss >= 0.2) return "blunder";
+  if (m.loss >= 0.1) return "mistake";
+  if (m.loss >= 0.05) return "dubious";
+  return null;
+}
+const MARK_SYMBOL: Record<string, string> = {
+  blunder: "??",
+  mistake: "?",
+  dubious: "?!",
+};
+
+function evalGraph(): string {
+  const rv = state.review!;
+  const total = state.game.moves.length;
+  const W = 300, H = 84;
+  const x = (k: number) => (total ? (k / total) * W : 0);
+  const y = (b: number) => H - b * H;
+  const pts: string[] = [];
+  let lastK = 0;
+  // Each search slightly favours the side to move; averaging neighbours
+  // removes the resulting zigzag from the curve.
+  const smooth = (k: number) => {
+    const b = rv.black[k];
+    if (b == null) return null;
+    const p = rv.black[k - 1], q = rv.black[k + 1];
+    if (k === 0 || k === total || p == null || q == null) return b;
+    return (p + 2 * b + q) / 4;
+  };
+  for (let k = 0; k <= total; k++) {
+    const b = smooth(k);
+    if (b == null) continue;
+    pts.push(`${x(k).toFixed(1)},${y(b).toFixed(1)}`);
+    lastK = k;
+  }
+  const area = pts.length
+    ? `<path class="graph-area" d="M0,${H} L${pts.join(" L")} L${
+      x(lastK).toFixed(1)
+    },${H} Z"/><path class="graph-line" d="M${pts.join(" L")}"/>`
+    : "";
+  const cur = currentPly();
+  const marks: string[] = [];
+  for (let i = 0; i < total; i++) {
+    const m = moveMark(i);
+    if (m === "blunder" || m === "mistake") {
+      const b = smooth(i + 1) ?? 0.5;
+      marks.push(
+        `<circle class="graph-mark mark-${m}" cx="${x(i + 1)}" cy="${
+          y(b)
+        }" r="3"/>`,
+      );
+    }
+  }
+  return `<svg class="eval-graph" id="eval-graph" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${
+    t("review.graph")
+  }">
+    <rect class="graph-bg" width="${W}" height="${H}"/>
+    ${area}
+    <line class="graph-mid" x1="0" y1="${H / 2}" x2="${W}" y2="${H / 2}"/>
+    <line class="graph-cursor" x1="${x(cur)}" y1="0" x2="${x(cur)}" y2="${H}"/>
+    ${marks.join("")}
+  </svg>`;
+}
+
+function renderReview() {
+  const card = $("review-card");
+  const rv = state.review;
+  if (!rv) {
+    card.hidden = true;
+    return;
+  }
+  card.hidden = false;
+  const total = state.game.moves.length;
+  const done = rv.black.filter((x) => x !== null).length;
+  // Biggest losses, for both sides.
+  const losses: { i: number; loss: number }[] = [];
+  for (let i = 0; i < total; i++) {
+    const m = moveLoss(i);
+    if (m && m.loss >= 0.1) losses.push({ i, loss: m.loss });
+  }
+  losses.sort((a, b) => b.loss - a.loss);
+  const count = (c: Color, mark: Mark) =>
+    [...Array(total).keys()].filter((i) =>
+      state.game.colorOf(i) === c && moveMark(i) === mark
+    ).length;
+  const sideRow = (c: Color) => `
+    <div class="review-side">
+      ${stoneIcon(c, "size-3")}
+      <span class="font-medium">${esc(sideLabel(c))}</span>
+      <span class="ms-auto text-muted-foreground">${
+    t("review.counts", {
+      blunders: count(c, "blunder"),
+      mistakes: count(c, "mistake"),
+    })
+  }</span>
+    </div>`;
+  card.innerHTML = `
+    <header class="px-5 flex items-baseline justify-between gap-2">
+      <h2 class="font-display text-lg">${t("review.title")}</h2>
+      <span class="text-xs text-muted-foreground">${
+    t("review.blackWinrate")
+  }</span>
+    </header>
+    <section class="px-5 flex flex-col gap-3">
+      ${evalGraph()}
+      ${
+    state.reviewing
+      ? `<div class="flex items-center gap-2 text-xs text-muted-foreground"><span class="thinking-dot size-3"></span>${
+        t("review.progress", { done, total: total + 1 })
+      }</div>`
+      : ""
+  }
+      ${sideRow(BLACK)}${sideRow(WHITE)}
+      ${
+    losses.length
+      ? `<div class="flex flex-col gap-1">
+        <span class="text-xs uppercase tracking-wider text-muted-foreground">${
+        t("review.turning")
+      }</span>
+        ${
+        losses.slice(0, 4).map(({ i, loss }) =>
+          `<button type="button" class="review-loss" data-ply="${i + 1}">${
+            stoneIcon(state.game.colorOf(i), "size-3")
+          }<span>${t("status.reviewMove", { n: i + 1, move: moveText(i) })}${
+            MARK_SYMBOL[moveMark(i) ?? ""] ?? ""
+          }</span><span class="ms-auto text-destructive">−${
+            Math.round(loss * 100)
+          }%</span></button>`
+        ).join("")
+      }
+      </div>`
+      : ""
+  }
+    </section>`;
+}
+
+/** Name of a side in the current game (live, or the open record). */
+function sideLabel(c: Color): string {
+  if (state.viewer) return recordSide(state.viewer.rec, c);
+  return c === state.player ? t("player.you") : lname(state.level);
+}
+
+// ---------------------------------------------------------------------------
 // Boot
 // ---------------------------------------------------------------------------
 
@@ -1429,6 +2251,8 @@ function restore() {
       state.game = g;
       state.phase = saved.phase ?? "play";
       state.result = saved.result ?? null;
+      if (saved.id) state.liveId = saved.id;
+      state.review = saved.review ?? null;
       if (saved.dead) {
         state.dead = new Uint8Array(saved.setup.size ** 2);
         for (const v of saved.dead) state.dead[v] = 1;
@@ -1479,7 +2303,10 @@ function init() {
       state.phase === "play" && state.game.moves.length > 0 &&
       !(await ask(t("confirm.newGame"), t("confirm.newGame.ok")))
     ) return;
-    if (state.phase === "over") newGame();
+    if (state.viewer) {
+      closeViewer();
+      openNewGameDialog();
+    } else if (state.phase === "over") newGame();
     else openNewGameDialog();
   });
   $("start-game-btn").addEventListener("click", startFromDialog);
@@ -1501,7 +2328,12 @@ function init() {
       // ignore
     }
   });
-  $("library-btn").addEventListener("click", () => toast("Coming soon"));
+  wireLibrary();
+  $("analyse-btn").addEventListener("click", startReview);
+  $("result-review-btn").addEventListener("click", () => {
+    $<HTMLDialogElement>("result-dialog").close();
+    startReview();
+  });
 
   document.addEventListener("click", (e) => {
     const el = (e.target as HTMLElement).closest<HTMLElement>(
@@ -1516,6 +2348,13 @@ function init() {
     else if (el.dataset.ply) viewAt(Number(el.dataset.ply));
     else if (el.dataset.step) viewAt(currentPly() + Number(el.dataset.step));
     else if (el.hasAttribute("data-live")) goLive();
+  });
+  $("review-card").addEventListener("click", (e) => {
+    const g = (e.target as Element).closest("#eval-graph");
+    if (!g) return;
+    const r = g.getBoundingClientRect();
+    const f = (e.clientX - r.left) / r.width;
+    viewAt(Math.round(f * state.game.moves.length));
   });
   $("nav-first").addEventListener("click", () => viewAt(0));
   $("nav-prev").addEventListener("click", () => viewAt(currentPly() - 1));
@@ -1550,6 +2389,7 @@ function init() {
         state.preview = null;
         render();
       } else if (state.viewPly !== null) goLive();
+      else if (state.viewer) closeViewer();
     } else return;
     e.preventDefault();
   });
@@ -1560,6 +2400,7 @@ function init() {
   if (!restored) newGame();
   else if (state.phase === "scoring" && !state.dead) enterScoring();
   else if (isAITurn()) requestAIMove();
+  openFromHash();
 }
 
 init();

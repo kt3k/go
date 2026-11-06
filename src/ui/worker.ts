@@ -43,6 +43,10 @@ export type WorkerResponse =
     black: number;
     /** Best move for the side to move there (vertex or PASS). */
     best: number;
+    /** Win rate of the best move, for the side to move. */
+    bestQ: number | null;
+    /** Win rate of the move actually played next, if searched enough. */
+    playedQ: number | null;
     done: boolean;
   };
 
@@ -110,6 +114,7 @@ function analyse(
   for (let k = 0; k < req.from; k++) g.play(req.moves[k]);
   for (let k = req.from; k <= req.moves.length; k++) {
     let black = 0.5, best = PASS;
+    let bestQ: number | null = null, playedQ: number | null = null;
     if (g.ended) {
       // Finished: the count decides; leave it to the caller.
       black = NaN;
@@ -123,6 +128,15 @@ function analyse(
       const r = s.run();
       black = g.board.toPlay === 1 ? r.winrate : 1 - r.winrate;
       best = g.board.vertex(r.move);
+      bestQ = r.winrate;
+      if (k < req.moves.length) {
+        const played = req.moves[k];
+        if (played === best) playedQ = bestQ;
+        else {
+          const st = s.childStats(g.board.pt(played));
+          if (st && st.visits >= 20) playedQ = st.winrate;
+        }
+      }
     }
     post({
       type: "analysis",
@@ -130,6 +144,8 @@ function analyse(
       ply: k,
       black,
       best,
+      bestQ,
+      playedQ,
       done: k === req.moves.length,
     });
     if (k < req.moves.length) g.play(req.moves[k]);

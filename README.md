@@ -10,6 +10,11 @@ Play **go** (igo, weiqi, baduk) against the computer, right in your browser.
   change its status before accepting the count
 - Pass, undo, hints, resign; step through earlier positions with ← →
 - Positional superko, ko and suicide rules enforced
+- Game records: every game is saved in the browser (IndexedDB) and listed in a
+  library — open any game to replay it, download one or all as SGF, import SGF
+  files, or copy a share link that encodes the whole game in the URL
+- Game review: the engine estimates the win rate after every move, draws a
+  graph, marks mistakes and shows the better move on the board
 - Dark mode; interface in English and Japanese
 - Works offline: fonts are self-hosted, nothing is loaded from a CDN
 

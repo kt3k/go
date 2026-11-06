@@ -543,7 +543,7 @@ function renderBoard() {
 
   // Territory markers (under the stones, so dead stones show them through).
   if (score) {
-    const sq = CELL * 0.32;
+    const sq = CELL * 0.26;
     for (let v = 0; v < n * n; v++) {
       const own = score.owner[v];
       if (own === EMPTY) continue;
@@ -874,7 +874,7 @@ function renderStatus() {
   $("status-extra").hidden = extra === "";
 
   const playing = state.phase === "play";
-  $("play-actions").hidden = state.phase === "over";
+  $("play-actions").hidden = state.phase !== "play";
   $<HTMLButtonElement>("pass-btn").disabled = !canPlay();
   $<HTMLButtonElement>("hint-btn").disabled = !canPlay() || state.hintPending;
   $<HTMLButtonElement>("undo-btn").disabled = state.phase === "over" ||

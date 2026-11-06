@@ -82,3 +82,12 @@ Deno.test("playouts are fast enough", () => {
     }ms`,
   );
 });
+
+Deno.test("replaying a saved move list", () => {
+  const setup = { size: 9, komi: 7.5, handicap: 0 };
+  const g = new Game(setup);
+  play(g, "E5", "C3", "pass", "D4");
+  const h = Game.fromMoves(setup, g.moves);
+  assert(h !== null);
+  assertEquals(h.board.hash, g.board.hash);
+});

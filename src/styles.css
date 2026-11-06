@@ -797,3 +797,9 @@ html[lang="ko"] .font-display {
     animation: none;
   }
 }
+
+/* Result dialog: no blur behind it, so the final board stays readable. */
+#result-dialog::backdrop {
+  --tw-backdrop-blur:;
+  backdrop-filter: none !important;
+}

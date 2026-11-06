@@ -21,7 +21,16 @@ export interface GameSetup {
   size: number;
   komi: number;
   handicap: number;
+  /** Explicit setup stones (imported games); replace the handicap points. */
+  ab?: number[];
+  aw?: number[];
+  /** Who moves first; by default White with handicap, else Black. */
+  first?: Color;
 }
+
+/** The colour that makes the first move of a game. */
+export const firstMover = (s: GameSetup): Color =>
+  s.first ?? (s.handicap >= 2 || (s.ab?.length ?? 0) > 0 ? WHITE : BLACK);
 
 export const DEFAULT_KOMI = 7.5;
 
@@ -45,16 +54,17 @@ export class Game {
 
   static initialBoard(setup: GameSetup): Board {
     const b = new Board(setup.size);
-    const hc = handicapPoints(setup.size, setup.handicap);
+    const hc = setup.ab ?? handicapPoints(setup.size, setup.handicap);
     for (const v of hc) b.place(b.pt(v), BLACK);
-    if (hc.length) b.toPlay = WHITE;
+    for (const v of setup.aw ?? []) b.place(b.pt(v), WHITE);
+    b.toPlay = firstMover(setup);
     return b;
   }
 
   /** Replays a move list; returns null if any move is illegal. */
   static fromMoves(setup: GameSetup, moves: number[]): Game | null {
     const g = new Game(setup);
-    for (const m of moves) if (!g.play(m)) return null;
+    for (const m of moves) if (g.play(m) === false) return null;
     return g;
   }
 
@@ -114,7 +124,7 @@ export class Game {
 
   /** Colour that played move `i` (0-based). */
   colorOf(i: number): Color {
-    const first = this.setup.handicap >= 2 ? WHITE : BLACK;
+    const first = firstMover(this.setup);
     return i % 2 === 0 ? first : opponent(first);
   }
 }

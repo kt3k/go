@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Go — the game of surrounding stones</title>
+    <meta
+      name="description"
+      content="Play go (igo, weiqi, baduk) against the computer in your browser. 9×9, 13×13 and 19×19 boards, five opponents from Japanese folklore."
+    />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="fonts.css" />
+    <meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'" />
+    <script src="theme.js"></script>
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="main.js"></script>
+  </head>
+  <body class="wave-bg">
+    <header
+      class="border-b border-border/70 bg-background/70 backdrop-blur sticky top-0 z-30">
+      <div class="mx-auto max-w-6xl px-4 h-16 flex items-center gap-3">
+        <span class="seal seal-logo" aria-hidden="true">囲碁</span>
+        <div class="flex items-baseline gap-3 min-w-0">
+          <h1 class="font-display text-2xl tracking-wide truncate"
+            data-i18n="brand.primary">Go</h1>
+          <span class="font-kanji text-xl text-shu" lang="ja"
+            id="brand-secondary" data-i18n="brand.secondary">囲碁</span>
+        </div>
+        <span class="hidden lg:inline text-sm text-muted-foreground ms-2"
+          data-i18n="header.tagline">The game of surrounding territory</span>
+        <div class="ms-auto flex items-center gap-1">
+          <label class="lang-picker" data-i18n-title="header.language">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+              viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              aria-hidden="true">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+              <path d="M2 12h20" />
+            </svg>
+            <span class="lang-current" id="lang-current"
+              aria-hidden="true"></span>
+            <select id="lang-select" data-i18n-aria="header.language"></select>
+          </label>
+          <button type="button" class="btn" data-variant="ghost" data-size="sm"
+            id="library-btn" data-i18n-title="header.library">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+              viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              aria-hidden="true">
+              <path d="M15 12h-5" />
+              <path d="M15 8h-5" />
+              <path d="M19 17V5a2 2 0 0 0-2-2H4" />
+              <path
+                d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3" />
+            </svg>
+            <span class="max-sm:sr-only"
+              data-i18n="header.library">Records</span>
+          </button>
+          <button type="button" class="btn" data-variant="ghost"
+            data-size="sm" id="rules-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+              viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              aria-hidden="true">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+            </svg>
+            <span class="max-sm:sr-only" data-i18n="header.rules">Rules</span>
+          </button>
+          <button type="button" class="btn" data-variant="ghost"
+            data-size="icon" id="theme-btn" aria-label="Toggle dark mode"
+            data-i18n-aria="header.theme">
+            <svg class="dark:hidden" xmlns="http://www.w3.org/2000/svg"
+              width="24" height="24" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+            </svg>
+            <svg class="hidden dark:block" xmlns="http://www.w3.org/2000/svg"
+              width="24" height="24" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="12" cy="12" r="4" />
+              <path
+                d="M12 2v2M12 20v2m-7.07-14.07 1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main
+      class="play-layout mx-auto max-w-6xl px-4 py-6 lg:py-10 grid gap-6 lg:gap-8">
+      <!-- Board column -->
+      <section class="min-w-0">
+        <div
+          class="board-col mx-auto w-full flex flex-col gap-3 max-w-[min(100%,max(20rem,calc(100dvh-15rem)))] md:max-w-[min(100%,max(20rem,calc(100dvh-13rem)))] lg:max-w-[min(100%,max(24rem,calc(100dvh-14rem)))]">
+          <div class="viewer-bar" id="viewer-card" tabindex="-1" role="region"
+            data-i18n-aria="viewer.title" hidden></div>
+          <div class="player-bar" id="top-player"></div>
+
+          <div class="board-frame w-full" id="board-frame" dir="ltr">
+            <div class="board-wrap">
+              <svg class="board" id="board" role="application" tabindex="0"
+                aria-label="Go board. Use the arrow keys to move the cursor and Enter to place a stone."
+                data-i18n-aria="board.aria"></svg>
+            </div>
+          </div>
+
+          <div class="player-bar" id="bottom-player"></div>
+          <div class="review-strip" id="review-strip" dir="ltr" hidden></div>
+          <div class="sr-only" id="sr-live" aria-live="polite"
+            aria-atomic="true"></div>
+        </div>
+      </section>
+
+      <!-- Side panel -->
+      <aside class="side-panel flex flex-col gap-4 min-w-0">
+        <div class="card gap-4 py-5">
+          <header class="px-5">
+            <h2 class="flex items-center gap-2.5 text-base" aria-live="polite">
+              <span id="status-icon" class="flex"></span>
+              <span id="status-title">Your move</span>
+            </h2>
+            <p id="status-detail" aria-live="polite"></p>
+            <div id="status-extra" class="flex flex-col gap-2 mt-2"
+              hidden></div>
+          </header>
+          <section class="px-5 status-actions" id="play-actions">
+            <button type="button" class="btn" data-variant="outline"
+              data-size="sm" id="pass-btn" title="Pass (P)"
+              data-i18n-title="btn.pass.title">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                aria-hidden="true">
+                <path d="M5 12h14" />
+                <path d="m12 5 7 7-7 7" />
+              </svg>
+              <span data-i18n="btn.pass">Pass</span>
+            </button>
+            <button type="button" class="btn" data-variant="outline"
+              data-size="sm" id="undo-btn" title="Take back your last move (U)"
+              data-i18n-title="btn.undo.title">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                aria-hidden="true">
+                <path d="M9 14 4 9l5-5" />
+                <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+              </svg>
+              <span data-i18n="btn.undo">Undo</span>
+            </button>
+            <button type="button" class="btn" data-variant="outline"
+              data-size="sm" id="hint-btn" title="Suggest a move (H)"
+              data-i18n-title="btn.hint.title">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                aria-hidden="true">
+                <path
+                  d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
+                <path d="M9 18h6" />
+                <path d="M10 22h4" />
+              </svg>
+              <span data-i18n="btn.hint">Hint</span>
+            </button>
+            <button type="button" class="btn" data-variant="ghost"
+              data-size="sm" id="resign-btn" title="Resign this game"
+              data-i18n-title="btn.resign.title">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                aria-hidden="true">
+                <path d="M4 22V4" />
+                <path
+                  d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1" />
+              </svg>
+              <span data-i18n="btn.resign">Resign</span>
+            </button>
+          </section>
+          <footer class="px-5">
+            <button type="button" class="btn w-full" id="new-game-btn">
+              <span class="stone-icon size-4 s-black" aria-hidden="true"></span>
+              <span id="new-game-label" data-i18n="btn.newGame">New game</span>
+            </button>
+          </footer>
+        </div>
+
+        <div class="card gap-3 py-5" id="opponent-card"></div>
+
+        <div class="card gap-3 py-5" id="review-card" hidden></div>
+
+        <div class="card gap-3 py-5">
+          <header class="px-5">
+            <h2
+              class="font-display text-lg flex items-baseline justify-between gap-2">
+              <span data-i18n="moves.title">Moves</span>
+              <span class="font-sans text-xs font-normal text-muted-foreground"
+                id="move-count"></span>
+            </h2>
+          </header>
+          <section class="px-5">
+            <div
+              class="moves-list moves-grid text-sm overflow-y-auto scrollbar"
+              dir="ltr" id="moves"></div>
+          </section>
+          <footer class="px-5 flex items-center gap-1" dir="ltr" id="moves-nav">
+            <button type="button" class="btn" data-variant="ghost"
+              data-size="icon-sm" id="nav-first"
+              aria-label="First position (Home)" title="First position (Home)"
+              data-i18n-aria="nav.first" data-i18n-title="nav.first">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m11 17-5-5 5-5" />
+                <path d="m18 17-5-5 5-5" />
+              </svg>
+            </button>
+            <button type="button" class="btn" data-variant="ghost"
+              data-size="icon-sm" id="nav-prev" aria-label="Previous move (←)"
+              title="Previous move (←)" data-i18n-aria="nav.prev"
+              data-i18n-title="nav.prev">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m15 18-6-6 6-6" />
+              </svg>
+            </button>
+            <button type="button" class="btn" data-variant="ghost"
+              data-size="icon-sm" id="nav-next" aria-label="Next move (→)"
+              title="Next move (→)" data-i18n-aria="nav.next"
+              data-i18n-title="nav.next">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m9 18 6-6-6-6" />
+              </svg>
+            </button>
+            <button type="button" class="btn" data-variant="ghost"
+              data-size="icon-sm" id="nav-last" aria-label="Latest move (End)"
+              title="Latest move (End)" data-i18n-aria="nav.last"
+              data-i18n-title="nav.last">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m6 17 5-5-5-5" />
+                <path d="m13 17 5-5-5-5" />
+              </svg>
+            </button>
+            <button type="button" class="btn ms-auto" data-variant="ghost"
+              data-size="sm" id="analyse-btn" hidden
+              title="Analyse the game so far"
+              data-i18n-title="nav.review.title">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+                <path d="m19 9-5 5-4-4-3 3" />
+              </svg>
+              <span data-i18n="nav.review">Review</span>
+            </button>
+            <button type="button" class="btn ms-auto" data-variant="outline"
+              data-size="sm" id="nav-live" hidden>
+              <span data-i18n="nav.live">Back to game</span>
+            </button>
+          </footer>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="mx-auto max-w-6xl px-4 pb-10">
+      <div class="ornament mb-4"></div>
+      <p
+        class="text-xs text-muted-foreground text-center leading-relaxed text-balance"
+        data-i18n-html="footer.html"></p>
+    </footer>
+
+    <!-- New game dialog -->
+    <dialog id="new-game-dialog" class="dialog w-full sm:max-w-lg max-h-[92dvh]"
+      aria-labelledby="new-game-title" data-backdrop-close>
+      <div>
+        <header>
+          <h2 id="new-game-title" class="font-display text-xl"
+            data-i18n="newGame.title">A new game</h2>
+          <p data-i18n="newGame.desc">Choose a board and an opponent.</p>
+        </header>
+        <section class="overflow-y-auto scrollbar flex flex-col gap-5">
+          <div class="flex flex-col gap-2">
+            <span class="text-sm font-medium" id="size-label"
+              data-i18n="newGame.size">Board</span>
+            <div class="seg" role="radiogroup" aria-labelledby="size-label">
+              <label><input type="radio" name="size" value="9" checked /><span>9×9</span></label>
+              <label><input type="radio" name="size" value="13" /><span>13×13</span></label>
+              <label><input type="radio" name="size" value="19" /><span>19×19</span></label>
+            </div>
+            <p class="text-xs text-muted-foreground" id="size-note"></p>
+          </div>
+          <div class="flex flex-col gap-2">
+            <span class="text-sm font-medium" id="play-as-label"
+              data-i18n="newGame.playAs">Play as</span>
+            <div class="seg" role="radiogroup" aria-labelledby="play-as-label">
+              <label><input type="radio" name="color" value="black" checked /><span class="stone-icon size-3 s-black"></span><span data-i18n="side.black">Black</span></label>
+              <label><input type="radio" name="color" value="random" /><span data-i18n="newGame.random">Random</span></label>
+              <label><input type="radio" name="color" value="white" /><span class="stone-icon size-3 s-white"></span><span data-i18n="side.white">White</span></label>
+            </div>
+            <p class="text-xs text-muted-foreground"
+              data-i18n="newGame.blackFirst">Black plays first.</p>
+          </div>
+          <div class="flex flex-col gap-2">
+            <label class="text-sm font-medium" for="handicap-select"
+              data-i18n="newGame.handicap">Handicap</label>
+            <select class="select w-full" id="handicap-select"></select>
+            <p class="text-xs text-muted-foreground" id="komi-note"></p>
+          </div>
+          <fieldset class="flex flex-col gap-2" id="level-list">
+            <legend class="text-sm font-medium mb-2"
+              data-i18n="newGame.opponent">Opponent</legend>
+          </fieldset>
+        </section>
+        <footer>
+          <button type="button" class="btn" data-variant="outline" data-close
+            data-i18n="btn.cancel">Cancel</button>
+          <button type="button" class="btn" id="start-game-btn">
+            <span class="stone-icon size-4 s-black" aria-hidden="true"></span>
+            <span data-i18n="btn.begin">Begin</span>
+          </button>
+        </footer>
+        <button type="button" class="btn" data-variant="ghost"
+          data-size="icon-sm" aria-label="Close dialog"
+          data-i18n-aria="btn.close" data-close>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+      </div>
+    </dialog>
+
+    <!-- Rules dialog -->
+    <dialog id="rules-dialog" class="dialog w-full sm:max-w-2xl max-h-[90dvh]"
+      aria-labelledby="rules-title" data-backdrop-close>
+      <div>
+        <header>
+          <h2 id="rules-title" class="font-display text-xl pe-8">
+            <span data-i18n="rules.title">The rules of go</span>
+            <span class="block font-kanji text-shu text-lg mt-0.5" lang="ja"
+              data-i18n="rules.subtitle">囲碁のルール</span>
+          </h2>
+          <p data-i18n="rules.desc">Simple rules, endless depth.</p>
+        </header>
+        <section class="overflow-y-auto scrollbar flex flex-col gap-4 text-sm"
+          id="rules-body"></section>
+        <footer>
+          <button type="button" class="btn" data-close
+            data-i18n="btn.returnToBoard">Return to the board</button>
+        </footer>
+        <button type="button" class="btn" data-variant="ghost"
+          data-size="icon-sm" aria-label="Close dialog"
+          data-i18n-aria="btn.close" data-close>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+      </div>
+    </dialog>
+
+    <!-- Game over dialog -->
+    <dialog id="result-dialog" class="dialog w-full sm:max-w-lg"
+      aria-labelledby="result-title" data-backdrop-close>
+      <div>
+        <header class="items-center text-center">
+          <div class="seal result-seal mb-2" id="result-seal" lang="ja"></div>
+          <h2 id="result-title" class="font-display text-2xl"></h2>
+          <p id="result-detail"></p>
+        </header>
+        <footer class="result-actions">
+          <button type="button" class="btn" data-variant="ghost" data-close
+            data-i18n="btn.viewBoard">View the board</button>
+          <button type="button" class="btn" data-variant="outline"
+            id="result-change-btn"
+            data-i18n="btn.changeOpponent">Change opponent</button>
+          <button type="button" class="btn" data-variant="outline"
+            id="result-review-btn"
+            data-i18n="btn.reviewGame">Review game</button>
+          <button type="button" class="btn" autofocus id="result-new-btn"
+            data-i18n="btn.playAgain">Play again</button>
+        </footer>
+      </div>
+    </dialog>
+
+    <!-- Confirmation (in-page replacement for confirm()) -->
+    <dialog id="confirm-dialog" class="dialog w-full sm:max-w-md"
+      aria-labelledby="confirm-dialog-text" data-backdrop-close>
+      <form method="dialog">
+        <header>
+          <p id="confirm-dialog-text"></p>
+        </header>
+        <footer>
+          <button type="submit" class="btn" data-variant="outline" value=""
+            autofocus data-i18n="btn.cancel">Cancel</button>
+          <button type="submit" class="btn" data-variant="destructive"
+            value="ok" id="confirm-dialog-ok">OK</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <div class="toast-msg" id="toast" role="status" aria-live="polite"
+      popover="manual" hidden></div>
+  </body>
+</html>

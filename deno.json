@@ -8,6 +8,7 @@
   },
   "imports": {
     "@fontsource/inter": "npm:@fontsource/inter@^5.3.0",
+    "@fontsource/noto-serif-tc": "npm:@fontsource/noto-serif-tc@^5.3.1",
     "@fontsource/shippori-mincho": "npm:@fontsource/shippori-mincho@^5.3.0",
     "@std/assert": "jsr:@std/assert@^1",
     "@std/http": "jsr:@std/http@^1",

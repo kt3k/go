@@ -4,81 +4,85 @@
 @source "./";
 @source "../static/";
 
-/* -------------------------------------------------------------------------
-   Theme: modern UI with the palette of an old go salon — washi paper, sumi
-   ink, indigo (藍), vermilion seals (朱) and a golden kaya-wood board.
-   ------------------------------------------------------------------------- */
+/* Theme: modern UI in the colours of ancient China — silk, ink and
+   lacquer, cinnabar seals (朱砂), bronze with its gold and verdigris. */
 
 :root {
-  --radius: 0.75rem;
-  --background: oklch(0.968 0.012 85);
-  --foreground: oklch(0.23 0.02 255);
-  --card: oklch(0.99 0.006 85);
-  --card-foreground: oklch(0.23 0.02 255);
-  --popover: oklch(0.99 0.006 85);
-  --popover-foreground: oklch(0.23 0.02 255);
-  --primary: oklch(0.37 0.085 255);
-  --primary-foreground: oklch(0.97 0.012 85);
-  --secondary: oklch(0.935 0.018 82);
-  --secondary-foreground: oklch(0.3 0.03 255);
-  --muted: oklch(0.94 0.014 82);
-  --muted-foreground: oklch(0.5 0.025 255);
-  --accent: oklch(0.925 0.025 82);
-  --accent-foreground: oklch(0.28 0.03 255);
-  --border: oklch(0.87 0.02 80);
-  --input: oklch(0.87 0.02 80);
-  --ring: oklch(0.6 0.16 35);
-  --destructive: oklch(0.55 0.2 28);
+  --radius: 0.6rem;
+  --background: oklch(0.955 0.018 78);
+  --foreground: oklch(0.21 0.015 40);
+  --card: oklch(0.985 0.008 80);
+  --card-foreground: oklch(0.21 0.015 40);
+  --popover: oklch(0.985 0.008 80);
+  --popover-foreground: oklch(0.21 0.015 40);
+  --primary: oklch(0.24 0.025 30);
+  --primary-foreground: oklch(0.96 0.02 80);
+  --secondary: oklch(0.925 0.022 75);
+  --secondary-foreground: oklch(0.26 0.02 35);
+  --muted: oklch(0.93 0.018 75);
+  --muted-foreground: oklch(0.48 0.025 45);
+  --accent: oklch(0.915 0.028 72);
+  --accent-foreground: oklch(0.24 0.02 35);
+  --border: oklch(0.85 0.03 70);
+  --input: oklch(0.85 0.03 70);
+  --ring: oklch(0.55 0.19 32);
+  --destructive: oklch(0.52 0.2 27);
 
-  --shu: oklch(0.57 0.18 33);
-  --shu-soft: oklch(0.7 0.12 40);
-  --ai: oklch(0.37 0.085 255);
-  --pattern: oklch(0.37 0.085 255 / 0.07);
+  /* Cinnabar, bronze gold and verdigris (patina). */
+  --shu: oklch(0.55 0.19 32);
+  --shu-soft: oklch(0.68 0.13 38);
+  --gold: oklch(0.68 0.11 78);
+  --patina: oklch(0.56 0.08 170);
+  --pattern: oklch(0.5 0.11 40 / 0.13);
 
-  --kaya: oklch(0.8 0.095 75);
-  --kaya-light: oklch(0.85 0.085 80);
-  --kaya-dark: oklch(0.7 0.1 65);
-  --grid: oklch(0.28 0.04 55 / 0.85);
-  --frame: oklch(0.32 0.05 45);
+  --kaya: oklch(0.79 0.09 72);
+  --kaya-light: oklch(0.84 0.08 78);
+  --kaya-dark: oklch(0.68 0.1 60);
+  --grid: oklch(0.25 0.04 45 / 0.88);
+  --frame: oklch(0.2 0.03 28);
 
-  --stone-black: oklch(0.2 0.01 260);
-  --stone-white: oklch(0.97 0.008 90);
+  --stone-black: oklch(0.19 0.012 160);
+  --stone-white: oklch(0.96 0.012 95);
 }
 
 .dark {
-  --background: oklch(0.17 0.02 260);
-  --foreground: oklch(0.94 0.012 85);
-  --card: oklch(0.21 0.022 260);
-  --card-foreground: oklch(0.94 0.012 85);
-  --popover: oklch(0.22 0.022 260);
-  --popover-foreground: oklch(0.94 0.012 85);
-  --primary: oklch(0.8 0.1 75);
-  --primary-foreground: oklch(0.2 0.022 260);
-  --secondary: oklch(0.27 0.022 260);
-  --secondary-foreground: oklch(0.94 0.012 85);
-  --muted: oklch(0.26 0.02 260);
-  --muted-foreground: oklch(0.72 0.02 85);
-  --accent: oklch(0.3 0.03 260);
-  --accent-foreground: oklch(0.94 0.012 85);
-  --border: oklch(1 0 0 / 11%);
+  --background: oklch(0.155 0.012 30);
+  --foreground: oklch(0.93 0.02 80);
+  --card: oklch(0.195 0.015 30);
+  --card-foreground: oklch(0.93 0.02 80);
+  --popover: oklch(0.21 0.015 30);
+  --popover-foreground: oklch(0.93 0.02 80);
+  --primary: oklch(0.78 0.11 78);
+  --primary-foreground: oklch(0.18 0.015 30);
+  --secondary: oklch(0.26 0.018 30);
+  --secondary-foreground: oklch(0.93 0.02 80);
+  --muted: oklch(0.25 0.016 30);
+  --muted-foreground: oklch(0.72 0.03 75);
+  --accent: oklch(0.29 0.022 30);
+  --accent-foreground: oklch(0.93 0.02 80);
+  --border: oklch(0.78 0.11 78 / 16%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.7 0.15 38);
-  --pattern: oklch(0.8 0.1 75 / 0.05);
-  --shu: oklch(0.66 0.17 35);
+  --ring: oklch(0.65 0.18 33);
+  --shu: oklch(0.64 0.18 33);
+  --gold: oklch(0.78 0.11 78);
+  --patina: oklch(0.66 0.08 170);
+  --pattern: oklch(0.78 0.11 78 / 0.085);
 
-  --kaya: oklch(0.7 0.085 72);
-  --kaya-light: oklch(0.74 0.08 76);
-  --kaya-dark: oklch(0.6 0.09 62);
-  --grid: oklch(0.2 0.03 55 / 0.9);
-  --frame: oklch(0.13 0.02 260);
+  --kaya: oklch(0.7 0.085 70);
+  --kaya-light: oklch(0.74 0.08 75);
+  --kaya-dark: oklch(0.58 0.09 58);
+  --grid: oklch(0.2 0.03 45 / 0.9);
+  --frame: oklch(0.11 0.012 30);
 }
 
 @theme inline {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho",
-    ui-serif, Georgia, serif;
-  --font-kanji: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --font-display: "Noto Serif TC", "Songti TC", "PMingLiU", ui-serif, Georgia,
+    serif;
+  --font-kanji: "Noto Serif TC", "Songti TC", "PMingLiU", serif;
   --color-shu: var(--shu);
+  --color-gold: var(--gold);
+  --color-patina: var(--patina);
   --color-shu-soft: var(--shu-soft);
   --color-kaya: var(--kaya);
 }
@@ -108,8 +112,11 @@ html[lang="ko"] body {
   font-family: "Inter", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic",
     sans-serif;
 }
-html[lang="ko"] .font-display {
-  font-family: "Shippori Mincho", "Nanum Myeongjo", "Noto Serif KR", serif;
+/* Japanese text in headings: a Japanese Mincho (the Chinese serif would
+   use Chinese glyph forms). */
+html[lang="ja"] .font-display {
+  font-family: "Shippori Mincho", "Noto Serif TC", "Hiragino Mincho ProN",
+    serif;
 }
 
 .font-display {
@@ -119,71 +126,95 @@ html[lang="ko"] .font-display {
   font-family: var(--font-kanji);
 }
 
-/* Seigaiha (青海波): overlapping waves, a classic Japanese pattern. */
-.wave-bg {
+/* Leiwen (雷紋) / huiwen (回紋): the square spirals of Shang and Zhou
+   bronzes, laid out as a lattice. */
+.fret-bg {
   position: relative;
   isolation: isolate;
 }
-.wave-bg::before {
+.fret-bg::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
   background-color: var(--pattern);
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='40' viewBox='0 0 80 40' fill='none' stroke='black' stroke-width='1.1'%3E%3Cg id='w'%3E%3Ccircle cx='40' cy='40' r='38'/%3E%3Ccircle cx='40' cy='40' r='29'/%3E%3Ccircle cx='40' cy='40' r='20'/%3E%3Ccircle cx='40' cy='40' r='11'/%3E%3C/g%3E%3Cuse href='%23w' x='-40' y='-20'/%3E%3Cuse href='%23w' x='40' y='-20'/%3E%3Cuse href='%23w' x='-40' y='-60'/%3E%3Cuse href='%23w' x='40' y='-60'/%3E%3Cuse href='%23w' y='-40'/%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='40' viewBox='0 0 80 40' fill='none' stroke='black' stroke-width='1.1'%3E%3Cg id='w'%3E%3Ccircle cx='40' cy='40' r='38'/%3E%3Ccircle cx='40' cy='40' r='29'/%3E%3Ccircle cx='40' cy='40' r='20'/%3E%3Ccircle cx='40' cy='40' r='11'/%3E%3C/g%3E%3Cuse href='%23w' x='-40' y='-20'/%3E%3Cuse href='%23w' x='40' y='-20'/%3E%3Cuse href='%23w' x='-40' y='-60'/%3E%3Cuse href='%23w' x='40' y='-60'/%3E%3Cuse href='%23w' y='-40'/%3E%3C/svg%3E");
-  -webkit-mask-size: 80px 40px;
-  mask-size: 80px 40px;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='56'%20height='56'%20viewBox='0%200%2056%2056'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='square'%3E%3Cpath%20d='M0%201H56M1%200V56'/%3E%3Cpath%20d='M8%2048V8H48V48H16V16H40V40H24V24H32V32'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='56'%20height='56'%20viewBox='0%200%2056%2056'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='square'%3E%3Cpath%20d='M0%201H56M1%200V56'/%3E%3Cpath%20d='M8%2048V8H48V48H16V16H40V40H24V24H32V32'/%3E%3C/svg%3E");
+  -webkit-mask-size: 56px 56px;
+  mask-size: 56px 56px;
+  pointer-events: none;
+}
+/* Fade the lattice towards the centre so the board stays calm. */
+.fret-bg::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(
+    ellipse 70% 60% at 45% 45%,
+    var(--background) 0%,
+    transparent 100%
+  );
+  opacity: 0.55;
   pointer-events: none;
 }
 
-/* Ornamental divider: a row of small linked circles (shippō). */
+/* Ornamental divider: a key-fret band, as on the rim of a bronze vessel. */
 .ornament {
-  height: 12px;
+  height: 16px;
   background-color: var(--shu);
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='12' viewBox='0 0 24 12' fill='none' stroke='black' stroke-width='1.2'%3E%3Ccircle cx='6' cy='6' r='5'/%3E%3Ccircle cx='18' cy='6' r='5'/%3E%3Ccircle cx='12' cy='6' r='1.4' fill='black'/%3E%3C/svg%3E")
-    repeat-x center / 24px 12px;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='12' viewBox='0 0 24 12' fill='none' stroke='black' stroke-width='1.2'%3E%3Ccircle cx='6' cy='6' r='5'/%3E%3Ccircle cx='18' cy='6' r='5'/%3E%3Ccircle cx='12' cy='6' r='1.4' fill='black'/%3E%3C/svg%3E")
-    repeat-x center / 24px 12px;
-  opacity: 0.55;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='28'%20height='16'%20viewBox='0%200%2028%2016'%20fill='none'%20stroke='black'%20stroke-width='1.6'%20stroke-linecap='square'%3E%3Cpath%20d='M0%201H28M0%2015H28'/%3E%3Cpath%20d='M4%2012V4H20V12H9V7H15V9'/%3E%3C/svg%3E")
+    repeat-x center / 28px 16px;
+  mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='28'%20height='16'%20viewBox='0%200%2028%2016'%20fill='none'%20stroke='black'%20stroke-width='1.6'%20stroke-linecap='square'%3E%3Cpath%20d='M0%201H28M0%2015H28'/%3E%3Cpath%20d='M4%2012V4H20V12H9V7H15V9'/%3E%3C/svg%3E")
+    repeat-x center / 28px 16px;
+  opacity: 0.7;
 }
 
-/* Vermilion seal (hanko), used for the logo and the result dialog. */
+/* Cinnabar seal (印章), used for the logo and the result dialog. */
 .seal {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border-radius: 0.4rem;
+  border-radius: 3px;
   background: var(--shu);
-  color: oklch(0.98 0.01 85);
+  color: oklch(0.97 0.015 80);
   font-family: var(--font-kanji);
+  font-weight: 700;
   line-height: 1;
-  box-shadow: inset 0 0 0 2px oklch(1 0 0 / 0.25);
+  box-shadow:
+    inset 0 0 0 2px var(--shu),
+    inset 0 0 0 3.5px oklch(0.97 0.015 80 / 0.85);
 }
 .seal-logo {
-  width: 2.1rem;
-  height: 2.1rem;
-  font-size: 1.05rem;
+  width: 2.3rem;
+  height: 2.3rem;
+  font-size: 1rem;
   writing-mode: vertical-rl;
-  letter-spacing: -0.05em;
+  letter-spacing: 0;
 }
 
 /* ---------------------------------------------------------------- Board */
 
 .board-frame {
   position: relative;
-  border-radius: calc(var(--radius) + 2px);
-  padding: clamp(4px, 1.2vmin, 10px);
-  background: var(--frame);
+  border-radius: 4px;
+  padding: clamp(6px, 1.5vmin, 12px);
+  /* Black lacquer with a gilt rule and a cinnabar inner line. */
+  background:
+    linear-gradient(135deg, oklch(1 0 0 / 0.07), transparent 45%),
+    var(--frame);
   box-shadow:
-    0 0 0 1px oklch(0 0 0 / 0.2),
-    0 24px 60px -24px oklch(0.25 0.06 50 / 0.6);
+    0 0 0 1px oklch(0 0 0 / 0.25),
+    inset 0 0 0 2px var(--gold),
+    inset 0 0 0 4px var(--frame),
+    inset 0 0 0 5px oklch(0.55 0.19 32 / 0.8),
+    0 24px 60px -24px oklch(0.25 0.06 40 / 0.6);
 }
 
 .board-wrap {
   position: relative;
-  border-radius: 6px;
+  border-radius: 2px;
   overflow: hidden;
   touch-action: manipulation;
   user-select: none;
@@ -432,12 +463,16 @@ html[lang="ko"] .font-display {
   width: 2.25rem;
   height: 2.25rem;
   flex-shrink: 0;
-  border-radius: 0.45rem;
-  background: var(--primary);
-  color: var(--primary-foreground);
+  border-radius: 3px;
+  background: var(--frame);
+  color: var(--gold);
   font-family: var(--font-kanji);
+  font-weight: 700;
   font-size: 1.15rem;
-  box-shadow: inset 0 0 0 2px oklch(1 0 0 / 0.18);
+  box-shadow:
+    inset 0 0 0 1.5px var(--gold),
+    inset 0 0 0 3px var(--frame),
+    inset 0 0 0 3.6px oklch(0.68 0.11 78 / 0.6);
 }
 .seal-badge.size-11 {
   width: 2.75rem;

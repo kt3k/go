@@ -16,6 +16,7 @@
     "jsr:@std/path@^1.1.6": "1.1.6",
     "jsr:@std/streams@^1.2.0": "1.2.0",
     "npm:@fontsource/inter@^5.3.0": "5.3.0",
+    "npm:@fontsource/noto-serif-tc@^5.3.1": "5.3.1",
     "npm:@fontsource/shippori-mincho@^5.3.0": "5.3.0",
     "npm:@tailwindcss/cli@*": "4.3.4",
     "npm:@tailwindcss/cli@^4.3.4": "4.3.4",
@@ -80,6 +81,9 @@
   "npm": {
     "@fontsource/inter@5.3.0": {
       "integrity": "sha512-RofMylZmjlJEfELXeNHFWBRcSs75rGU/6bV2S2jfnvv/3rPXPGe0LgUJTklcHZ9lM4OZmAVFhcJPnACfb91A3g=="
+    },
+    "@fontsource/noto-serif-tc@5.3.1": {
+      "integrity": "sha512-bX+7aXbMU9IyncD2v00P4E+aciwQl2e9F9qmHp3H3By+hQVh6bwa4rR2RD0QP/Vtt+9mwgjEPzsnEKb2oyIxog=="
     },
     "@fontsource/shippori-mincho@5.3.0": {
       "integrity": "sha512-S41kRxQuubAaYss+LeXu0IOc02RQwsPaJbR1cWZx4VV15hXaYZViH3WAve9HpDVFqKYd/BVk86Bg7lp9ytV3KQ=="
@@ -431,6 +435,7 @@
       "jsr:@std/assert@1",
       "jsr:@std/http@1",
       "npm:@fontsource/inter@^5.3.0",
+      "npm:@fontsource/noto-serif-tc@^5.3.1",
       "npm:@fontsource/shippori-mincho@^5.3.0",
       "npm:@tailwindcss/cli@^4.3.4",
       "npm:basecoat-css@^1.1.0",

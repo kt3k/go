@@ -57,11 +57,11 @@ import {
 // ---------------------------------------------------------------------------
 
 export const LEVELS = [
-  { id: 1, kanji: "狸" },
-  { id: 2, kanji: "河童" },
-  { id: 3, kanji: "狐" },
-  { id: 4, kanji: "天狗" },
-  { id: 5, kanji: "龍神" },
+  { id: 1, kanji: "玉兔", glyph: "兔" },
+  { id: 2, kanji: "靈龜", glyph: "龜" },
+  { id: 3, kanji: "狐仙", glyph: "狐" },
+  { id: 4, kanji: "麒麟", glyph: "麟" },
+  { id: 5, kanji: "青龍", glyph: "龍" },
 ];
 const lname = (id: number) => t(`level.${id}.name`);
 const ltitle = (id: number) => t(`level.${id}.title`);
@@ -70,7 +70,7 @@ const ldesc = (id: number) => t(`level.${id}.desc`);
 const kanjiAside = (id: number, extra = "") =>
   currentLang() === "ja"
     ? ""
-    : `<span class="font-kanji text-shu ${extra}" lang="ja">${
+    : `<span class="font-kanji text-shu ${extra}" lang="zh-Hant">${
       LEVELS[id - 1].kanji
     }</span>`;
 
@@ -515,14 +515,14 @@ function grain(size: number): string {
 const STONE_DEFS = `
 <defs>
   <radialGradient id="g-black" cx="0.36" cy="0.32" r="0.75">
-    <stop offset="0" stop-color="oklch(0.52 0.01 260)"/>
-    <stop offset="0.45" stop-color="oklch(0.24 0.01 260)"/>
-    <stop offset="1" stop-color="oklch(0.12 0.01 260)"/>
+    <stop offset="0" stop-color="oklch(0.5 0.025 165)"/>
+    <stop offset="0.45" stop-color="oklch(0.23 0.012 165)"/>
+    <stop offset="1" stop-color="oklch(0.11 0.008 165)"/>
   </radialGradient>
   <radialGradient id="g-white" cx="0.36" cy="0.32" r="0.8">
-    <stop offset="0" stop-color="#ffffff"/>
-    <stop offset="0.6" stop-color="oklch(0.95 0.008 90)"/>
-    <stop offset="1" stop-color="oklch(0.82 0.012 85)"/>
+    <stop offset="0" stop-color="oklch(0.995 0.006 95)"/>
+    <stop offset="0.6" stop-color="oklch(0.94 0.014 95)"/>
+    <stop offset="1" stop-color="oklch(0.8 0.02 90)"/>
   </radialGradient>
 </defs>`;
 
@@ -1065,8 +1065,8 @@ function renderOpponent() {
   }</span>
     </header>
     <section class="px-5 flex items-start gap-3">
-      <span class="seal-badge size-11" lang="ja">${
-    LEVELS[l - 1].kanji[0]
+      <span class="seal-badge size-11" lang="zh-Hant">${
+    LEVELS[l - 1].glyph
   }</span>
       <div class="min-w-0">
         <div class="flex items-baseline gap-2 flex-wrap">
@@ -1218,7 +1218,7 @@ function showResult() {
   const res = state.result;
   if (!res) return;
   const won = res.winner === state.player;
-  $("result-seal").textContent = res.winner === 0 ? "持" : won ? "勝" : "負";
+  $("result-seal").textContent = res.winner === 0 ? "和" : won ? "勝" : "負";
   $("result-title").textContent = res.winner === 0
     ? t("result.draw")
     : won
@@ -1251,7 +1251,7 @@ function renderLevels() {
       <input type="radio" name="level" value="${l.id}" ${
       l.id === state.level ? "checked" : ""
     } />
-      <span class="seal-badge" lang="ja">${l.kanji[0]}</span>
+      <span class="seal-badge" lang="zh-Hant">${l.glyph}</span>
       <span class="flex flex-col min-w-0 flex-1">
         <span class="text-sm font-medium flex items-baseline gap-2 flex-wrap">
           ${lname(l.id)}
@@ -2217,7 +2217,7 @@ function applyLanguage(l: Lang) {
     .querySelector('meta[name="description"]')
     ?.setAttribute("content", t("meta.description"));
   applyStatic();
-  $("brand-secondary").hidden = l === "ja";
+  $("brand-secondary").hidden = false;
   $("lang-current").textContent = LANGS.find((x) => x.code === l)!.name;
   $<HTMLSelectElement>("lang-select").value = l;
   renderRules();

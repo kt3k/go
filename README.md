@@ -1,9 +1,9 @@
-# Go · 囲碁
+# Go · 圍棋
 
 Play **go** (igo, weiqi, baduk) against the computer, right in your browser.
 
 - 9×9, 13×13 and 19×19 boards, handicap stones, komi
-- Five opponents from Japanese folklore, from _Tanuki_ to _Ryūjin_
+- Five opponents from Chinese myth, from the _Jade Rabbit_ to the _Azure Dragon_
 - Engine runs in a Web Worker: Monte-Carlo tree search with RAVE and tactical
   playouts
 - Chinese (area) scoring with automatic dead-stone estimation; tap a group to

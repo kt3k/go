@@ -14,12 +14,12 @@ export const LANGS: { code: Lang; name: string }[] = [
 export type Dict = Record<string, string>;
 
 const en: Dict = {
-  "meta.title": "Go — the game of surrounding stones",
+  "meta.title": "Go · 圍棋 — the ancient game of encircling",
   "meta.description":
-    "Play go (igo, weiqi, baduk) against the computer in your browser. 9×9, 13×13 and 19×19 boards, five opponents from Japanese folklore.",
+    "Play go (weiqi, igo, baduk), the game born in ancient China, against the computer in your browser. 9×9, 13×13 and 19×19 boards, five opponents from Chinese myth.",
   "brand.primary": "Go",
-  "brand.secondary": "囲碁",
-  "header.tagline": "The game of surrounding territory",
+  "brand.secondary": "圍棋",
+  "header.tagline": "The ancient game of encircling",
   "header.rules": "Rules",
   "header.library": "Records",
   "header.theme": "Toggle dark mode",
@@ -76,7 +76,7 @@ const en: Dict = {
     "There is nothing big left to play. Pass to end the game.",
   "status.victory": "Victory",
   "status.defeat": "Defeat",
-  "status.draw": "A draw (jigo)",
+  "status.draw": "A draw",
   "status.counting": "Counting the score",
   "status.counting.estimating": "Estimating which stones are dead…",
   "status.counting.detail":
@@ -139,7 +139,7 @@ const en: Dict = {
   "opponent.handicap.other": "{n} handicap stones",
 
   "newGame.title": "A new game",
-  "newGame.desc": "Choose a board and an opponent from Japanese folklore.",
+  "newGame.desc": "Choose a board and an opponent from Chinese myth.",
   "newGame.size": "Board",
   "newGame.size.9": "Quick games: the computer is at its strongest here.",
   "newGame.size.13": "A middle size, with room for real frameworks.",
@@ -157,24 +157,25 @@ const en: Dict = {
   "newGame.opponent": "Opponent",
 
   "level.strength": "Strength {n} of {total}",
-  "level.1.name": "Tanuki",
-  "level.1.title": "The shape-shifting raccoon dog",
+  "level.1.name": "Jade Rabbit",
+  "level.1.title": "Who pounds elixir on the moon",
   "level.1.desc": "Plays on a whim and is easily fooled. A gentle first game.",
-  "level.2.name": "Kappa",
-  "level.2.title": "The river imp",
-  "level.2.desc": "Knows how to capture, and not much more.",
-  "level.3.name": "Kitsune",
-  "level.3.title": "The fox spirit",
+  "level.2.name": "Spirit Tortoise",
+  "level.2.title": "Bearer of the Luo River script",
+  "level.2.desc": "Slow and careful. Knows how to capture, and not much more.",
+  "level.3.name": "Fox Immortal",
+  "level.3.title": "The thousand-year fox",
   "level.3.desc": "Quick and cunning; reads simple fights.",
-  "level.4.name": "Tengu",
-  "level.4.title": "The mountain goblin",
-  "level.4.desc": "A stern teacher who punishes careless shapes.",
-  "level.5.name": "Ryūjin",
-  "level.5.title": "The dragon king of the sea",
+  "level.4.name": "Qilin",
+  "level.4.title": "The auspicious beast",
+  "level.4.desc":
+    "Gentle in manner, stern in judgement: punishes careless shapes.",
+  "level.5.name": "Azure Dragon",
+  "level.5.title": "Guardian of the East",
   "level.5.desc": "Thinks long and deep before every stone.",
 
   "rules.title": "The rules of go",
-  "rules.subtitle": "囲碁のルール",
+  "rules.subtitle": "圍棋之道",
   "rules.desc": "A few simple rules, and a game of endless depth.",
   "rules.place.title": "Placing stones",
   "rules.place":
@@ -195,7 +196,7 @@ const en: Dict = {
     "<li>Corners are easiest to claim, then the sides, then the centre.</li><li>A group with two separate eyes can never be captured.</li><li>Here, scoring follows the Chinese (area) rules with 7.5 points of komi.</li>",
 
   "footer.html":
-    'Go is over 2,500 years old: <span lang="ja">囲碁</span> in Japan, <span lang="zh">围棋</span> in China, <span lang="ko">바둑</span> in Korea. An old tale tells of a woodcutter who stopped to watch two immortals play; when the game ended, his axe handle had rotted away (<span lang="ja">爛柯</span>). The engine runs entirely in your browser.',
+    'Go was born in ancient China over 2,500 years ago and counts among the four arts of the scholar (琴棋書畫): <span lang="zh-Hant">圍棋</span> in Chinese, <span lang="ja">囲碁</span> in Japanese, <span lang="ko">바둑</span> in Korean. A tale of the Jin dynasty tells of the woodcutter Wang Zhi, who stopped to watch two immortals play; when the game ended, his axe handle had rotted away (<span lang="zh-Hant">爛柯</span>). The engine runs entirely in your browser.',
 
   "confirm.resign": "Resign this game?",
   "confirm.resign.ok": "Resign",
@@ -264,12 +265,12 @@ const en: Dict = {
 };
 
 const ja: Dict = {
-  "meta.title": "囲碁 — 石を囲むゲーム",
+  "meta.title": "囲碁 · 圍棋 — 古代中国に生まれた、囲む遊戯",
   "meta.description":
-    "ブラウザでコンピューターと囲碁を打とう。9路・13路・19路盤、日本の妖怪たち5人の相手。",
+    "古代中国で生まれた囲碁を、ブラウザでコンピューターと対局。9路・13路・19路盤、中国神話の5人の相手。",
   "brand.primary": "Go",
-  "brand.secondary": "囲碁",
-  "header.tagline": "地を囲む、二千五百年のゲーム",
+  "brand.secondary": "圍棋",
+  "header.tagline": "古代中国に生まれた、囲む遊戯",
   "header.rules": "ルール",
   "header.library": "棋譜",
   "header.theme": "ダークモード切替",
@@ -384,7 +385,7 @@ const ja: Dict = {
   "opponent.handicap.other": "{n}子局",
 
   "newGame.title": "新しい対局",
-  "newGame.desc": "碁盤と、日本の妖怪から相手を選びましょう。",
+  "newGame.desc": "碁盤と、中国神話から相手を選びましょう。",
   "newGame.size": "碁盤",
   "newGame.size.9":
     "短時間で打てます。コンピューターが一番強いのはこの盤です。",
@@ -403,24 +404,24 @@ const ja: Dict = {
   "newGame.opponent": "対局相手",
 
   "level.strength": "強さ {n} / {total}",
-  "level.1.name": "狸",
-  "level.1.title": "化け上手の狸",
+  "level.1.name": "玉兎",
+  "level.1.title": "月で仙薬をつく兎",
   "level.1.desc": "気まぐれに打ち、すぐに化かされます。最初の一局に。",
-  "level.2.name": "河童",
-  "level.2.title": "川に棲む河童",
-  "level.2.desc": "石を取ることは知っています。それ以上はあまり。",
-  "level.3.name": "狐",
-  "level.3.title": "賢い狐",
+  "level.2.name": "霊亀",
+  "level.2.title": "洛書を背負う亀",
+  "level.2.desc": "ゆっくり慎重。石を取ることは知っています。",
+  "level.3.name": "狐仙",
+  "level.3.title": "千年を生きた狐",
   "level.3.desc": "素早く狡猾。簡単な戦いは読んできます。",
-  "level.4.name": "天狗",
-  "level.4.title": "山の天狗",
-  "level.4.desc": "悪い形を見逃さない、厳しい師匠です。",
-  "level.5.name": "龍神",
-  "level.5.title": "海の龍神",
+  "level.4.name": "麒麟",
+  "level.4.title": "瑞兆の霊獣",
+  "level.4.desc": "物腰は穏やか、判断は厳格。悪い形を見逃しません。",
+  "level.5.name": "青龍",
+  "level.5.title": "東方の守護神",
   "level.5.desc": "一手一手、深く長く考えます。",
 
   "rules.title": "囲碁のルール",
-  "rules.subtitle": "The rules of go",
+  "rules.subtitle": "圍棋之道",
   "rules.desc": "ルールはわずか。奥深さは無限です。",
   "rules.place.title": "石を置く",
   "rules.place":
@@ -441,7 +442,7 @@ const ja: Dict = {
     "<li>隅が一番地を作りやすく、次に辺、最後に中央です。</li><li>二つの独立した眼を持つ石は決して取られません。</li><li>このサイトでは中国ルール（面積計算）、コミ 7.5 目で数えます。</li>",
 
   "footer.html":
-    '囲碁は2500年以上の歴史をもつゲームです（中国では<span lang="zh">围棋</span>、韓国では<span lang="ko">바둑</span>）。仙人の碁を眺めていた木こりが、一局が終わると斧の柄が腐っていた——という「爛柯」の故事があります。エンジンはすべてブラウザ内で動作します。',
+    '囲碁は2500年以上前に古代中国で生まれ、文人の嗜み「琴棋書画」の一つに数えられてきました（中国語で<span lang="zh-Hant">圍棋</span>、韓国語で<span lang="ko">바둑</span>）。晋の木こり王質が仙人の碁を眺めていると、一局が終わる頃には斧の柄が腐っていた——という「爛柯」の故事が伝わります。エンジンはすべてブラウザ内で動作します。',
 
   "confirm.resign": "この対局を投了しますか？",
   "confirm.resign.ok": "投了する",

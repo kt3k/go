@@ -85,6 +85,7 @@ async function buildCSS() {
  */
 const FONTS: [pkg: string, weights: number[]][] = [
   ["inter", [400, 500, 600, 700]],
+  ["noto-serif-tc", [400, 700]],
   ["shippori-mincho", [400, 600]],
 ];
 
